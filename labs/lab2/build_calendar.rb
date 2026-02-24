@@ -1,6 +1,10 @@
 require 'date'
 
-startDateStr, endDateStr, outputFile = ARGV[1..]
+if ARGV.length != 4
+  puts "Использование: ruby build_calendar.rb teams.txt 01.08.2026 01.06.2027 calendar.txt"
+  exit
+end
+teamsTxt, startDateStr, endDateStr, outputFile = ARGV
 
 begin
   startDate = Date.strptime(startDateStr, "%d.%m.%Y")
@@ -22,44 +26,39 @@ while currentDate <= endDate
   end
   currentDate += 1
 end
-
-allTeams = []
-File.foreach('teams.txt', encoding: 'UTF-8') { |line|
-  allTeams << line
-  allTeams << line
-}
-allTeams.shuffle!
-
-matches = []
-i = 0
-while i < allTeams.length - 1
-  team1 = allTeams[i]
-  team2 = allTeams[i + 1]
-  
-  if team1 != team2
-    matches << [team1, team2]
-    i += 2
-  else
-    i += 1
-  end
+if validDates.empty?
+  puts "Ошибка: в периоде нет выходных дней"
+  exit
 end
 
-calendar = []
-currentMatch = 0
-validDates.each do |date|
-  [12, 15, 18].each do |hour|
-    for i in 0..1
-      if currentMatch < matches.length
-        calendar << [date, hour, matches[currentMatch]]
-        currentMatch += 1
-      end
+teams = []
+File.foreach(teamsTxt, encoding: 'UTF-8') { |line| teams << line }
+if teams.length < 2
+  puts "Ошибка: нужно как минимум 2 команды"
+  exit
+end
+
+teams = teams.reject(&:empty?).map do |line|
+  name, city = line.split(' — ', 2)
+  { name: name.strip, city: city.strip }
+end
+
+games = teams.combination(2).to_a.shuffle
+
+gamesDay = games.length / validDates.length
+extra = games.length % validDates.length
+
+File.open(outputFile, 'w') do |file|
+  index = 0
+  validDates.each_with_index do |day, i|
+    count = gamesDay + (i < extra ? 1 : 0)
+    (0...count).each do |j|
+      t1, t2 = games[index + j]
+      time = ["12:00", "15:00", "18:00"][j % 3]
+      file.puts "#{day.strftime('%d.%m.%Y')} #{time}: #{t1[:name]} (#{t1[:city]}) vs #{t2[:name]} (#{t2[:city]})"
     end
+    index += count
   end
 end
 
-File.open(outputFile, 'w:UTF-8') do |file|
-  calendar.each do |item|
-    date, hour, match = item
-    file.puts "#{date.strftime('%d.%m.%Y')} #{hour}:00: #{match[0]} vs #{match[1]}"
-  end
-end
+puts "Календарь создан! Матчей: #{games.length}, Дней: #{validDates.length}"
