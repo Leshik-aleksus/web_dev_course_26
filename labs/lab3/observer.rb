@@ -21,12 +21,12 @@ class WeatherStation
   
   # TODO: Implement attach method to add an observer
   def attach(observer)
-    nil
+    @observers << observer
   end
   
   # TODO: Implement detach method to remove an observer
   def detach(observer)
-    nil
+    @observers.delete(observer)
   end
   
   # TODO: Implement notify method to call update on all observers
