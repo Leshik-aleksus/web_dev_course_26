@@ -12,7 +12,7 @@ class WeatherStation
   # TODO: Initialize with an empty array of observers
   # TODO: Add temperature, humidity, and pressure attributes
   
-  def initialize
+  def initialize 
     @observers = []
     @temperature = 0
     @humidity = 0
